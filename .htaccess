@@ -1,0 +1,74 @@
+# включить RewriteEngine
+RewriteEngine On
+
+# все запросы через index.php (роутинг API)
+# если файл не существует
+RewriteCond %{REQUEST_FILENAME} !-f
+# если папка не существует
+RewriteCond %{REQUEST_FILENAME} !-d
+# все запросы -> центральный роутер index.php
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# запрет доступа к скрытым файлам (.git, .env, etc)
+<Files ~ "^\.">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# защита config папки
+# никто не увидит database.php с паролями
+<Directory "config">
+    Order Deny,Allow
+    Deny from all
+</Directory>
+
+# запрет доступа к миграциям и логам
+<FilesMatch "^(db_create\.php|seed\.php|error\.log)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# запрет выполнения PHP в logs
+<Directory "logs">
+    <Files "*.log">
+        Order allow,deny
+        Deny from all
+    </Files>
+</Directory>
+
+AddDefaultCharset UTF-8
+
+# json ответы сжимаются -> быстрее загрузка
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+</IfModule>
+
+<IfModule mod_headers.c>
+    # предотвращение MIME sniffing
+    # чтобы браузер не вынюхивал содержимое приходящих файлов и обрабатывал содержимое по MIME-типу
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # защита от clickjacking
+    # чтобы другие сайты не могли спрятать нашу страницу под своими кнопками
+    Header always set X-Frame-Options "DENY"
+    
+    # XSS защита
+    # чтобы браузер не выполнял вредоносные скрипты из заголовков/атрибутов и блокировал подозрительный java script
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # HSTS (HTTPS)
+    # чтобы браузер не позволял загружать сайт по HTTP и всегда использовал только HTTPS
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+</IfModule>
+
+ErrorDocument 404 /index.php
