@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 }
 
 class ApiRouter {
-    private $basePath = '/api/';
+    private $basePath = '/../api/';
     private $routes = [
         'bookings' => 'bookings.php',
         'clients' => 'clients.php',
@@ -30,11 +30,10 @@ class ApiRouter {
         $resource = $segments[0] ?? '';
         
         if (isset($this->routes[$resource])) {
-            $scriptPath = __DIR__ . '/api/' . $this->routes[$resource];
+            $scriptPath = __DIR__ . '/../api/' . $this->routes[$resource];
             
             if (file_exists($scriptPath)) {
                 $_GET = array_merge($_GET, $_POST);
-                
                 include_once $scriptPath;
             } else {
                 $this->sendError(404, "API endpoint не найден: $scriptPath");
