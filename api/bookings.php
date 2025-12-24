@@ -24,45 +24,48 @@ switch($method) {
             
             if($booking->id != null) {
                 $booking_arr = array(
-                    "id" => $booking->id,
-                    "client_id" => $booking->client_id,
-                    "tour_id" => $booking->tour_id,
-                    "booking_date" => $booking->booking_date,
-                    "status" => $booking->status,
-                    "total_price" => $booking->total_price,
-                    "notes" => $booking->notes,
-                    "created_at" => $booking->created_at,
-                    "client_name" => $booking->client_name,
-                    "tour_name" => $booking->tour_name
+                    "success" => true,
+                    "data" => array(
+                        "id" => $booking->id,
+                        "client_id" => $booking->client_id,
+                        "tour_id" => $booking->tour_id,
+                        "booking_date" => $booking->booking_date,
+                        "status" => $booking->status,
+                        "total_price" => $booking->total_price,
+                        "notes" => $booking->notes,
+                        "created_at" => $booking->created_at,
+                        "client_name" => $booking->client_name,
+                        "tour_name" => $booking->tour_name
+                    )
                 );
-                
                 http_response_code(200);
                 echo json_encode($booking_arr);
             } else {
                 http_response_code(404);
-                echo json_encode(array("message" => "Бронирование не найдено."));
+                echo json_encode(array(
+                    "success" => false,
+                    "message" => "Бронирование не найдено."
+                ));
             }
         } else {
             $stmt = $booking->read();
             $num = $stmt->rowCount();
             
             if($num > 0) {
-                $bookings_arr = array();
-                $bookings_arr["data"] = array();
+                $bookings_arr = array("success" => true, "data" => array());
                 
                 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    extract($row);
                     $booking_item = array(
-                        "id" => $id,
-                        "client_id" => $client_id,
-                        "tour_id" => $tour_id,
-                        "booking_date" => $booking_date,
-                        "status" => $status,
-                        "total_price" => $total_price,
-                        "notes" => $notes,
-                        "created_at" => $created_at,
-                        "client_name" => $client_name,
-                        "tour_name" => $tour_name
+                        "id" => $row['id'],
+                        "client_id" => $row['client_id'],
+                        "tour_id" => $row['tour_id'],
+                        "booking_date" => $row['booking_date'],
+                        "status" => $row['status'],
+                        "total_price" => $row['total_price'],
+                        "notes" => $row['notes'],
+                        "created_at" => $row['created_at'],
+                        "client_name" => $row['client_name'],
+                        "tour_name" => $row['tour_name']
                     );
                     array_push($bookings_arr["data"], $booking_item);
                 }
@@ -71,7 +74,10 @@ switch($method) {
                 echo json_encode($bookings_arr);
             } else {
                 http_response_code(404);
-                echo json_encode(array("message" => "Бронирования не найдены."));
+                echo json_encode(array(
+                    "success" => false,
+                    "message" => "Бронирования не найдены."
+                ));
             }
         }
         break;
@@ -90,14 +96,14 @@ switch($method) {
             
             if($booking->create()) {
                 http_response_code(201);
-                echo json_encode(array("message" => "Бронирование создано."));
+                echo json_encode(array("success" => true, "message" => "Бронирование создано."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно создать бронирование."));
+                echo json_encode(array("success" => false, "message" => "Невозможно создать бронирование."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Невозможно создать бронирование. Данные неполные."));
+            echo json_encode(array("success" => false, "message" => "Невозможно создать бронирование. Данные неполные."));
         }
         break;
     
@@ -111,14 +117,14 @@ switch($method) {
             
             if($booking->update()) {
                 http_response_code(200);
-                echo json_encode(array("message" => "Бронирование обновлено."));
+                echo json_encode(array("success" => true, "message" => "Бронирование обновлено."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно обновить бронирование."));
+                echo json_encode(array("success" => false, "message" => "Невозможно обновить бронирование."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Невозможно обновить бронирование. Укажите ID."));
+            echo json_encode(array("success" => false, "message" => "Невозможно обновить бронирование. Укажите ID."));
         }
         break;
     
@@ -130,14 +136,14 @@ switch($method) {
             
             if($booking->delete()) {
                 http_response_code(200);
-                echo json_encode(array("message" => "Бронирование удалено."));
+                echo json_encode(array("success" => true, "message" => "Бронирование удалено."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно удалить бронирование."));
+                echo json_encode(array("success" => false, "message" => "Невозможно удалить бронирование."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Укажите ID бронирования для удаления."));
+            echo json_encode(array("success" => false, "message" => "Укажите ID бронирования для удаления."));
         }
         break;
 }

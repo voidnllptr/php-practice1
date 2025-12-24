@@ -24,39 +24,42 @@ switch($method) {
             
             if($client->full_name != null) {
                 $client_arr = array(
-                    "id" => $client->id,
-                    "full_name" => $client->full_name,
-                    "passport_number" => $client->passport_number,
-                    "phone" => $client->phone,
-                    "email" => $client->email,
-                    "birth_date" => $client->birth_date,
-                    "created_at" => $client->created_at
+                    "success" => true,
+                    "data" => array(
+                        "id" => $client->id,
+                        "full_name" => $client->full_name,
+                        "passport_number" => $client->passport_number,
+                        "phone" => $client->phone,
+                        "email" => $client->email,
+                        "birth_date" => $client->birth_date,
+                        "created_at" => $client->created_at
+                    )
                 );
-                
                 http_response_code(200);
                 echo json_encode($client_arr);
             } else {
                 http_response_code(404);
-                echo json_encode(array("message" => "Клиент не найден."));
+                echo json_encode(array(
+                    "success" => false,
+                    "message" => "Клиент не найден."
+                ));
             }
         } else {
             $stmt = $client->read();
             $num = $stmt->rowCount();
             
             if($num > 0) {
-                $clients_arr = array();
-                $clients_arr["data"] = array();
+                $clients_arr = array("success" => true, "data" => array());
                 
                 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    extract($row);
                     $client_item = array(
-                        "id" => $id,
-                        "full_name" => $full_name,
-                        "passport_number" => $passport_number,
-                        "phone" => $phone,
-                        "email" => $email,
-                        "birth_date" => $birth_date,
-                        "created_at" => $created_at
+                        "id" => $row['id'],
+                        "full_name" => $row['full_name'],
+                        "passport_number" => $row['passport_number'],
+                        "phone" => $row['phone'],
+                        "email" => $row['email'],
+                        "birth_date" => $row['birth_date'],
+                        "created_at" => $row['created_at']
                     );
                     array_push($clients_arr["data"], $client_item);
                 }
@@ -65,7 +68,10 @@ switch($method) {
                 echo json_encode($clients_arr);
             } else {
                 http_response_code(404);
-                echo json_encode(array("message" => "Клиенты не найдены."));
+                echo json_encode(array(
+                    "success" => false,
+                    "message" => "Клиенты не найдены."
+                ));
             }
         }
         break;
@@ -82,14 +88,14 @@ switch($method) {
 
             if($client->create()) {
                 http_response_code(201);
-                echo json_encode(array("message" => "Клиент создан."));
+                echo json_encode(array("success" => true, "message" => "Клиент создан."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно создать клиента."));
+                echo json_encode(array("success" => false, "message" => "Невозможно создать клиента."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Невозможно создать клиента. Данные неполные."));
+            echo json_encode(array("success" => false, "message" => "Невозможно создать клиента. Данные неполные."));
         }
         break;
         
@@ -106,14 +112,14 @@ switch($method) {
             
             if($client->update()) {
                 http_response_code(200);
-                echo json_encode(array("message" => "Клиент обновлен."));
+                echo json_encode(array("success" => true, "message" => "Клиент обновлен."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно обновить клиента."));
+                echo json_encode(array("success" => false, "message" => "Невозможно обновить клиента."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Невозможно обновить клиента. Данные неполные."));
+            echo json_encode(array("success" => false, "message" => "Невозможно обновить клиента. Данные неполные."));
         }
         break;
         
@@ -125,14 +131,14 @@ switch($method) {
             
             if($client->delete()) {
                 http_response_code(200);
-                echo json_encode(array("message" => "Клиент удален."));
+                echo json_encode(array("success" => true, "message" => "Клиент удален."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно удалить клиента."));
+                echo json_encode(array("success" => false, "message" => "Невозможно удалить клиента."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Укажите ID клиента для удаления."));
+            echo json_encode(array("success" => false, "message" => "Укажите ID клиента для удаления."));
         }
         break;
 }

@@ -1,20 +1,18 @@
-const API_BASE = '/api';
+const API_BASE = 'http://localhost:8000/api';
 
 let tours = [], clients = [], bookings = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadTours('available');
-    loadClients();
-    loadBookings();
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Загрузка данных...');
+    await loadTours('available');
+    await loadClients();
+    await loadBookings();
+    populateSelects();
 });
-
-function showSection(sectionId) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById(sectionId).classList.add('active');
-}
 
 async function apiRequest(endpoint, options = {}) {
     try {
+        console.log(`Запрос: ${API_BASE}${endpoint}`);
         const response = await fetch(`${API_BASE}${endpoint}`, {
             ...options,
             headers: {
@@ -22,10 +20,12 @@ async function apiRequest(endpoint, options = {}) {
                 ...options.headers
             }
         });
-        return await response.json();
+        const data = await response.json();
+        console.log(`Ответ:`, data);
+        return data;
     } catch (error) {
         console.error('API Error:', error);
-        return { error: true, message: 'Ошибка сервера' };
+        return { error: true, message: error.message };
     }
 }
 
@@ -33,58 +33,35 @@ async function loadTours(type = 'available') {
     const endpoint = type === 'available' ? '/tours?available=true' : '/tours';
     const data = await apiRequest(endpoint);
     
-    if (data.data) {
+    if (data && !data.error && data.data) {
         tours = data.data;
         renderTours(tours);
+    } else {
+        console.error('Нет данных туров:', data);
     }
 }
 
 function renderTours(tours) {
     const container = document.getElementById('tours-list');
+    if (!container) return console.error('Нет #tours-list');
+    
     container.innerHTML = tours.map(tour => `
         <div class="card">
-            <h3>${tour.name}</h3>
-            <p><strong>${tour.country_name}</strong></p>
-            <p>${tour.start_date} - ${tour.end_date}</p>
-            <p>${tour.description}</p>
-            <div class="price">${tour.price}₽</div>
-            <div class="available-spots">
-                Мест: ${tour.available_spots}/${tour.max_people}
-                <span class="${tour.available_spots > 0 ? 'available' : 'sold-out'}">
-                    ${tour.available_spots > 0 ? 'Есть места' : 'Закончились'}
-                </span>
-            </div>
+            <h3>${tour.name || 'Без названия'}</h3>
+            <p><strong>${tour.country_name || 'Страна неизвестна'}</strong></p>
+            <p>${tour.start_date || ''} - ${tour.end_date || ''}</p>
+            <p>${tour.description || ''}</p>
+            <div class="price">${tour.price || 0}₽</div>
+            <div>Мест: ${tour.available_spots || 0}/${tour.max_people || 0}</div>
         </div>
-    `).join('');
-}
-
-async function loadBookings() {
-    const data = await apiRequest('/bookings');
-    if (data.data) {
-        bookings = data.data;
-        renderBookings(bookings);
-    }
-}
-
-function renderBookings(bookings) {
-    const container = document.getElementById('bookings-list');
-    container.innerHTML = bookings.map(booking => `
-        <div class="card">
-            <h3>${booking.client_name}</h3>
-            <p><strong>${booking.tour_name}</strong></p>
-            <p>Дата: ${booking.booking_date}</p>
-            <p>Статус: <span class="status ${booking.status}">${booking.status}</span></p>
-            <div class="price">${booking.total_price}₽</div>
-        </div>
-    `).join('');
+    `).join('') || '<p>Туры не найдены</p>';
 }
 
 async function loadClients() {
     const data = await apiRequest('/clients');
-    if (data.data) {
+    if (data && !data.error && data.data) {
         clients = data.data;
         renderClients(clients);
-        populateSelects();
     }
 }
 
@@ -96,29 +73,57 @@ function renderClients(clients) {
             <p>Тел: ${client.phone}</p>
             <p>Email: ${client.email}</p>
         </div>
-    `).join('');
+    `).join('') || '<p>Клиенты не найдены</p>';
 }
 
-function populateSelects() {
-    document.getElementById('clientSelect').innerHTML = clients.map(c => 
-        `<option value="${c.id}">${c.full_name}</option>`
-    ).join('');
-    document.getElementById('tourSelect').innerHTML = tours.map(t => 
-        `<option value="${t.id}" ${t.available_spots > 0 ? '' : 'disabled'}>
-            ${t.name} (${t.available_spots}/${t.max_people})
-        </option>`
-    ).join('');
+async function loadBookings() {
+    const data = await apiRequest('/bookings');
+    if (data && !data.error && data.data) {
+        bookings = data.data;
+        renderBookings(bookings);
+    }
+}
+
+function renderBookings(bookings) {
+    const container = document.getElementById('bookings-list');
+    container.innerHTML = bookings.map(booking => `
+        <div class="card">
+            <h3>${booking.client_name || 'Клиент'}</h3>
+            <p><strong>${booking.tour_name || 'Тур'}</strong></p>
+            <p>Дата: ${booking.booking_date}</p>
+            <div class="price">${booking.total_price}₽</div>
+        </div>
+    `).join('') || '<p>Бронирования не найдены</p>';
+}
+
+function showSection(sectionId) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(sectionId).classList.add('active');
 }
 
 function showBookingForm() {
     document.getElementById('booking-form').style.display = 'flex';
+    populateSelects();
 }
 
 function hideBookingForm() {
     document.getElementById('booking-form').style.display = 'none';
 }
 
-document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+function populateSelects() {
+    const clientSelect = document.getElementById('clientSelect');
+    const tourSelect = document.getElementById('tourSelect');
+    
+    clientSelect.innerHTML = clients.map(client => 
+        `<option value="${client.id}">${client.full_name}</option>`
+    ).join('');
+    
+    tourSelect.innerHTML = tours.map(tour => 
+        `<option value="${tour.id}">${tour.name} (${tour.available_spots}/${tour.max_people})</option>`
+    ).join('');
+}
+
+document.getElementById('bookingForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const formData = {
@@ -126,20 +131,19 @@ document.getElementById('bookingForm').addEventListener('submit', async (e) => {
         tour_id: document.getElementById('tourSelect').value,
         booking_date: document.getElementById('bookingDate').value,
         status: 'confirmed',
-        total_price: document.getElementById('totalPrice').value,
-        notes: ''
+        total_price: document.getElementById('totalPrice').value
     };
-
-    const result = await apiRequest('/bookings', {
+    
+    const response = await apiRequest('/bookings', {
         method: 'POST',
         body: JSON.stringify(formData)
     });
-
-    if (!result.error) {
+    
+    if (response.success) {
         hideBookingForm();
         loadBookings();
-        alert('Бронирование создано');
+        alert('Бронирование создано!');
     } else {
-        alert('Ошибка: ' + (result.message || 'Попробуйте позже'));
+        alert('Ошибка: ' + (response.message || 'Неизвестная ошибка'));
     }
 });

@@ -24,35 +24,38 @@ switch($method) {
             
             if($country->name != null) {
                 $country_arr = array(
-                    "id" => $country->id,
-                    "name" => $country->name,
-                    "code" => $country->code,
-                    "visa_required" => (bool)$country->visa_required,
-                    "created_at" => $country->created_at
+                    "success" => true,
+                    "data" => array(
+                        "id" => $country->id,
+                        "name" => $country->name,
+                        "code" => $country->code,
+                        "visa_required" => (bool)$country->visa_required,
+                        "created_at" => $country->created_at
+                    )
                 );
-                
                 http_response_code(200);
                 echo json_encode($country_arr);
             } else {
                 http_response_code(404);
-                echo json_encode(array("message" => "Страна не найдена."));
+                echo json_encode(array(
+                    "success" => false,
+                    "message" => "Страна не найдена."
+                ));
             }
         } else {
             $stmt = $country->read();
             $num = $stmt->rowCount();
             
             if($num > 0) {
-                $countries_arr = array();
-                $countries_arr["data"] = array();
+                $countries_arr = array("success" => true, "data" => array());
                 
                 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    extract($row);
                     $country_item = array(
-                        "id" => $id,
-                        "name" => $name,
-                        "code" => $code,
-                        "visa_required" => (bool)$visa_required,
-                        "created_at" => $created_at
+                        "id" => $row['id'],
+                        "name" => $row['name'],
+                        "code" => $row['code'],
+                        "visa_required" => (bool)$row['visa_required'],
+                        "created_at" => $row['created_at']
                     );
                     array_push($countries_arr["data"], $country_item);
                 }
@@ -61,7 +64,10 @@ switch($method) {
                 echo json_encode($countries_arr);
             } else {
                 http_response_code(404);
-                echo json_encode(array("message" => "Страны не найдены."));
+                echo json_encode(array(
+                    "success" => false,
+                    "message" => "Страны не найдены."
+                ));
             }
         }
         break;
@@ -76,14 +82,14 @@ switch($method) {
             
             if($country->create()) {
                 http_response_code(201);
-                echo json_encode(array("message" => "Страна создана."));
+                echo json_encode(array("success" => true, "message" => "Страна создана."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно создать страну."));
+                echo json_encode(array("success" => false, "message" => "Невозможно создать страну."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Невозможно создать страну. Данные неполные."));
+            echo json_encode(array("success" => false, "message" => "Невозможно создать страну. Данные неполные."));
         }
         break;
         
@@ -98,14 +104,14 @@ switch($method) {
             
             if($country->update()) {
                 http_response_code(200);
-                echo json_encode(array("message" => "Страна обновлена."));
+                echo json_encode(array("success" => true, "message" => "Страна обновлена."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно обновить страну."));
+                echo json_encode(array("success" => false, "message" => "Невозможно обновить страну."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Невозможно обновить страну. Данные неполные."));
+            echo json_encode(array("success" => false, "message" => "Невозможно обновить страну. Данные неполные."));
         }
         break;
         
@@ -117,14 +123,14 @@ switch($method) {
             
             if($country->delete()) {
                 http_response_code(200);
-                echo json_encode(array("message" => "Страна удалена."));
+                echo json_encode(array("success" => true, "message" => "Страна удалена."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно удалить страну."));
+                echo json_encode(array("success" => false, "message" => "Невозможно удалить страну."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Укажите ID страны для удаления."));
+            echo json_encode(array("success" => false, "message" => "Укажите ID страны для удаления."));
         }
         break;
 }

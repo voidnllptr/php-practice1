@@ -19,29 +19,28 @@ class ApiRouter {
         'tours' => 'tours.php'
     ];
 
-    public function route() {
-        $requestUri = $_SERVER['REQUEST_URI'];
-        $path = parse_url($requestUri, PHP_URL_PATH);
+   public function route() {
+    $requestUri = $_SERVER['REQUEST_URI'];
+    $path = parse_url($requestUri, PHP_URL_PATH);
+    
+    $docRoot = $_SERVER['DOCUMENT_ROOT'];
+    $relativePath = str_replace($docRoot, '', $path);
+    $segments = explode('/', trim($relativePath, '/'));
+    
+    $resource = $segments[1] ?? '';
+    
+    if (isset($this->routes[$resource])) {
+        $scriptPath = __DIR__ . '/../api/' . $this->routes[$resource];
         
-        $path = str_replace($this->basePath, '', $path);
-        $path = trim($path, '/');
-        
-        $segments = explode('/', $path);
-        $resource = $segments[0] ?? '';
-        
-        if (isset($this->routes[$resource])) {
-            $scriptPath = __DIR__ . '/../api/' . $this->routes[$resource];
-            
-            if (file_exists($scriptPath)) {
-                $_GET = array_merge($_GET, $_POST);
-                include_once $scriptPath;
-            } else {
-                $this->sendError(404, "API endpoint не найден: $scriptPath");
-            }
+        if (file_exists($scriptPath)) {
+            include_once $scriptPath;
         } else {
-            $this->sendApiInfo();
+            $this->sendError(404, "API endpoint не найден: $scriptPath");
         }
+    } else {
+        $this->sendApiInfo();
     }
+}
     
     private function sendError($code, $message) {
         http_response_code($code);

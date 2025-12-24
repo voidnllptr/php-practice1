@@ -17,7 +17,6 @@ $method = $_SERVER['REQUEST_METHOD'];
 switch($method) {
     case 'GET':
         $id = isset($_GET['id']) ? $_GET['id'] : null;
-        $available = isset($_GET['available']) ? $_GET['available'] : null;
         
         if($id) {
             $tour->id = $id;
@@ -25,79 +24,50 @@ switch($method) {
             
             if($tour->id != null) {
                 $tour_arr = array(
-                    "id" => $tour->id,
-                    "country_id" => $tour->country_id,
-                    "name" => $tour->name,
-                    "description" => $tour->description,
-                    "start_date" => $tour->start_date,
-                    "end_date" => $tour->end_date,
-                    "price" => $tour->price,
-                    "max_people" => $tour->max_people,
-                    "available_spots" => $tour->available_spots,
-                    "created_at" => $tour->created_at,
-                    "country_name" => $tour->country_name
+                    "success" => true,
+                    "data" => array(
+                        "id" => $tour->id,
+                        "country_id" => $tour->country_id,
+                        "name" => $tour->name,
+                        "description" => $tour->description,
+                        "start_date" => $tour->start_date,
+                        "end_date" => $tour->end_date,
+                        "price" => $tour->price,
+                        "max_people" => $tour->max_people,
+                        "available_spots" => $tour->available_spots,
+                        "created_at" => $tour->created_at,
+                        "country_name" => $tour->country_name
+                    )
                 );
-                
                 http_response_code(200);
                 echo json_encode($tour_arr);
             } else {
                 http_response_code(404);
-                echo json_encode(array("message" => "Тур не найден."));
-            }
-        } elseif($available === 'true') {
-            $stmt = $tour->readAvailable();
-            $num = $stmt->rowCount();
-            
-            if($num > 0) {
-                $tours_arr = array();
-                $tours_arr["data"] = array();
-                
-                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    extract($row);
-                    $tour_item = array(
-                        "id" => $id,
-                        "country_id" => $country_id,
-                        "name" => $name,
-                        "description" => $description,
-                        "start_date" => $start_date,
-                        "end_date" => $end_date,
-                        "price" => $price,
-                        "max_people" => $max_people,
-                        "available_spots" => $available_spots,
-                        "created_at" => $created_at,
-                        "country_name" => $country_name
-                    );
-                    array_push($tours_arr["data"], $tour_item);
-                }
-                
-                http_response_code(200);
-                echo json_encode($tours_arr);
-            } else {
-                http_response_code(404);
-                echo json_encode(array("message" => "Доступные туры не найдены."));
+                echo json_encode(array(
+                    "success" => false,
+                    "message" => "Тур не найден."
+                ));
             }
         } else {
             $stmt = $tour->read();
             $num = $stmt->rowCount();
             
             if($num > 0) {
-                $tours_arr = array();
-                $tours_arr["data"] = array();
+                $tours_arr = array("success" => true, "data" => array());
                 
                 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    extract($row);
                     $tour_item = array(
-                        "id" => $id,
-                        "country_id" => $country_id,
-                        "name" => $name,
-                        "description" => $description,
-                        "start_date" => $start_date,
-                        "end_date" => $end_date,
-                        "price" => $price,
-                        "max_people" => $max_people,
-                        "available_spots" => $available_spots,
-                        "created_at" => $created_at,
-                        "country_name" => $country_name
+                        "id" => $row['id'],
+                        "country_id" => $row['country_id'],
+                        "name" => $row['name'],
+                        "description" => $row['description'],
+                        "start_date" => $row['start_date'],
+                        "end_date" => $row['end_date'],
+                        "price" => $row['price'],
+                        "max_people" => $row['max_people'],
+                        "available_spots" => $row['available_spots'],
+                        "created_at" => $row['created_at'],
+                        "country_name" => $row['country_name']
                     );
                     array_push($tours_arr["data"], $tour_item);
                 }
@@ -106,7 +76,10 @@ switch($method) {
                 echo json_encode($tours_arr);
             } else {
                 http_response_code(404);
-                echo json_encode(array("message" => "Туры не найдены."));
+                echo json_encode(array(
+                    "success" => false,
+                    "message" => "Туры не найдены."
+                ));
             }
         }
         break;
@@ -128,14 +101,14 @@ switch($method) {
             
             if($tour->create()) {
                 http_response_code(201);
-                echo json_encode(array("message" => "Тур создан."));
+                echo json_encode(array("success" => true, "message" => "Тур создан."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно создать тур."));
+                echo json_encode(array("success" => false, "message" => "Невозможно создать тур."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Невозможно создать тур. Данные неполные."));
+            echo json_encode(array("success" => false, "message" => "Невозможно создать тур. Данные неполные."));
         }
         break;
     
@@ -155,14 +128,14 @@ switch($method) {
             
             if($tour->update()) {
                 http_response_code(200);
-                echo json_encode(array("message" => "Тур обновлен."));
+                echo json_encode(array("success" => true, "message" => "Тур обновлен."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно обновить тур."));
+                echo json_encode(array("success" => false, "message" => "Невозможно обновить тур."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Невозможно обновить тур. Укажите ID."));
+            echo json_encode(array("success" => false, "message" => "Невозможно обновить тур. Укажите ID."));
         }
         break;
     
@@ -174,14 +147,14 @@ switch($method) {
             
             if($tour->delete()) {
                 http_response_code(200);
-                echo json_encode(array("message" => "Тур удален."));
+                echo json_encode(array("success" => true, "message" => "Тур удален."));
             } else {
                 http_response_code(503);
-                echo json_encode(array("message" => "Невозможно удалить тур."));
+                echo json_encode(array("success" => false, "message" => "Невозможно удалить тур."));
             }
         } else {
             http_response_code(400);
-            echo json_encode(array("message" => "Укажите ID тура для удаления."));
+            echo json_encode(array("success" => false, "message" => "Укажите ID тура для удаления."));
         }
         break;
 }
